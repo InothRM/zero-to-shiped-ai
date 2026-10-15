@@ -8,7 +8,7 @@
   <title>0 to Shipped — Resume Parser</title>
   <style>
     :root {
-      color-scheme: light;
+      color-scheme: dark;
       --ink: #e8f0f4;
       --muted: #8b9ba8;
       --line: #243341;
@@ -41,7 +41,7 @@
     button, input { font: inherit; }
     button { cursor: pointer; }
     button:focus-visible, input:focus-visible, .dropzone:focus-visible {
-      outline: 3px solid rgba(23, 107, 80, .3);
+      outline: 3px solid rgba(97, 235, 196, .42);
       outline-offset: 3px;
     }
     .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
@@ -81,8 +81,70 @@
     .workspace {
       display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: 20px;
       align-items: stretch;
+      perspective: 1500px;
     }
-    .card { background: linear-gradient(145deg, rgba(15, 25, 35, .98), rgba(11, 19, 27, .98)); border: 1px solid rgba(123, 157, 177, .17); border-radius: 15px; box-shadow: var(--shadow); }
+    .card {
+      position: relative;
+      isolation: isolate;
+      transform: perspective(1200px) rotateX(.7deg);
+      transform-style: preserve-3d;
+      background: linear-gradient(145deg, #111d28 0%, #0d151e 54%, #0a1119 100%);
+      border: 1px solid rgba(142, 178, 195, .2);
+      border-radius: 15px;
+      box-shadow:
+        0 2px 0 rgba(214, 243, 255, .045) inset,
+        0 -1px 0 rgba(0, 0, 0, .55) inset,
+        0 26px 45px rgba(0, 0, 0, .34),
+        0 8px 16px rgba(0, 0, 0, .2);
+      transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+    }
+    .card::before {
+      position: absolute;
+      z-index: -1;
+      inset: 8px -8px -9px 8px;
+      border: 1px solid rgba(98, 145, 164, .17);
+      border-radius: inherit;
+      background: linear-gradient(145deg, #14212a, #0b1219 72%);
+      box-shadow: 0 18px 28px rgba(0, 0, 0, .2);
+      content: "";
+      transform: translateZ(-18px);
+    }
+    .card::after {
+      position: absolute;
+      z-index: 0;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse at 12% 0%, rgba(97, 235, 196, .075), transparent 42%);
+      content: "";
+      pointer-events: none;
+    }
+    .card > .card-heading,
+    .card > .dropzone,
+    .card > .privacy-note,
+    .card > .analyze-button,
+    .card > .sample-button,
+    .card > .results-top,
+    .card > .score-area,
+    .card > .meter-list,
+    .card > .skill-section,
+    .card > .missing-section,
+    .card > .results-footer {
+      position: relative;
+      z-index: 1;
+      transform: translateZ(13px);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .card:hover {
+        z-index: 2;
+        transform: perspective(1200px) rotateX(0deg) rotateY(-.45deg) translateY(-5px);
+        border-color: rgba(97, 235, 196, .32);
+        box-shadow:
+          0 2px 0 rgba(214, 243, 255, .07) inset,
+          0 -1px 0 rgba(0, 0, 0, .55) inset,
+          0 36px 58px rgba(0, 0, 0, .42),
+          0 10px 24px rgba(36, 193, 151, .08);
+      }
+    }
     .upload-card { padding: 27px; }
     .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .step-label { color: #8498a5; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
@@ -91,11 +153,13 @@
     .dropzone {
       min-height: 231px; margin-top: 23px; padding: 22px 14px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center;       border: 1px dashed #314550; border-radius: 11px; background: rgba(5, 12, 18, .48);
-      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+      text-align: center;       border: 1px dashed #314550; border-radius: 11px;
+      background: linear-gradient(145deg, rgba(17, 31, 40, .78), rgba(5, 12, 18, .7));
+      box-shadow: 0 2px 0 rgba(226, 249, 255, .035) inset, 0 11px 20px rgba(0, 0, 0, .15);
+      transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
     }
-    .dropzone.is-over { border-color: var(--green); background: rgba(26, 81, 67, .18); transform: scale(1.01); box-shadow: inset 0 0 25px rgba(97, 235, 196, .05); }
-    .upload-icon { width: 49px; height: 49px; display: grid; place-items: center; border: 1px solid rgba(97, 235, 196, .18); border-radius: 12px; background: #101e27; color: var(--green); box-shadow: 0 0 22px rgba(97, 235, 196, .07); }
+    .dropzone.is-over { border-color: var(--green); background: rgba(26, 81, 67, .24); transform: translateZ(18px) scale(1.01); box-shadow: inset 0 0 25px rgba(97, 235, 196, .07), 0 12px 24px rgba(0, 0, 0, .22); }
+    .upload-icon { width: 49px; height: 49px; display: grid; place-items: center; border: 1px solid rgba(97, 235, 196, .22); border-radius: 12px; background: linear-gradient(145deg, #172c34, #0d1a22); color: var(--green); box-shadow: 0 3px 0 rgba(255,255,255,.045) inset, 0 9px 15px rgba(0, 0, 0, .25), 0 0 22px rgba(97, 235, 196, .07); }
     .dropzone strong { margin-top: 14px; font-size: 14px; font-weight: 680; }
     .dropzone p { margin: 7px 0 13px; color: var(--muted); font-size: 12px; }
     .choose-button { padding: 8px 12px; border: 1px solid #334752; border-radius: 7px; background: #111e27; color: var(--green); font-size: 11px; font-weight: 700; }
@@ -126,7 +190,7 @@
     .error-message { display: none; margin: 11px 0 0; color: #ac443b; font-size: 12px; line-height: 1.45; }
     .error-message.visible { display: block; }
 
-    .results-card { overflow: hidden; padding: 25px 27px 23px; }
+    .results-card { overflow: visible; padding: 25px 27px 23px; }
     .results-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .preview-label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid rgba(97, 235, 196, .17); border-radius: 6px; background: rgba(16, 42, 37, .8); color: var(--green); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; font-weight: 700; letter-spacing: .06em; }
     .preview-label .spark { color: var(--lime); }
@@ -158,9 +222,10 @@
     .skill-head h3 { margin: 0; font-size: 12px; letter-spacing: -.015em; }
     .skill-head small { color: var(--muted); font-size: 10px; }
     .chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 7px; font-size: 10px; font-weight: 650; }
-    .chip.present { border: 1px solid rgba(97, 235, 196, .12); background: var(--mint); color: #82dabb; }
-    .chip.missing { border: 1px solid rgba(255, 157, 130, .12); background: #2b1d1d; color: #f0a18a; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 7px; font-size: 10px; font-weight: 650; box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 3px 7px rgba(0,0,0,.12); transition: transform .18s ease, box-shadow .18s ease; }
+    .chip:hover { transform: translateY(-2px) translateZ(5px); box-shadow: 0 4px 10px rgba(0,0,0,.24); }
+    .chip.present { border: 1px solid rgba(97, 235, 196, .16); background: linear-gradient(145deg, #15372f, #102a25); color: #82dabb; }
+    .chip.missing { border: 1px solid rgba(255, 157, 130, .16); background: linear-gradient(145deg, #392522, #2b1d1d); color: #f0a18a; }
     .chip svg { width: 11px; height: 11px; }
     .missing-section { margin-top: 15px; }
     .results-footer { display: flex; gap: 8px; align-items: flex-start; margin-top: 17px; color: #909b93; font-size: 10px; line-height: 1.5; }
@@ -191,6 +256,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+      .card, .card:hover, .chip:hover, .dropzone.is-over { transform: none !important; }
     }
   </style>
 </head>
