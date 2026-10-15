@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f8f5">
+  <meta name="description" content="A friendly resume score and skills preview from 0 to Shipped.">
+  <title>0 to Shipped — Resume Parser</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #e8f0f4;
+      --muted: #8b9ba8;
+      --line: #243341;
+      --paper: #0d151e;
+      --canvas: #080d13;
+      --green: #61ebc4;
+      --green-dark: #34d8b0;
+      --mint: #102a25;
+      --lime: #c9ff70;
+      --coral: #ff9d82;
+      --coral-pale: #301c20;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .28);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--canvas);
+      background-image:
+        radial-gradient(ellipse at 80% 2%, rgba(42, 212, 179, .1), transparent 34rem),
+        radial-gradient(ellipse at 8% 42%, rgba(55, 123, 208, .08), transparent 32rem),
+        linear-gradient(rgba(107, 146, 164, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(107, 146, 164, .045) 1px, transparent 1px);
+      background-size: auto, auto, 36px 36px, 36px 36px;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, .dropzone:focus-visible {
+      outline: 3px solid rgba(23, 107, 80, .3);
+      outline-offset: 3px;
+    }
+    .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar {
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(126, 157, 174, .13);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+    .brand-mark {
+      width: 37px; height: 37px; display: grid; place-items: center;
+      border: 1px solid rgba(97, 235, 196, .3); border-radius: 11px;
+      background: linear-gradient(145deg, #14372f, #10231f); color: var(--green);
+      box-shadow: 0 0 22px rgba(97, 235, 196, .11);
+    }
+    .brand-name { font-size: 15px; font-weight: 750; letter-spacing: -.035em; }
+    .brand-name span { color: var(--green); }
+    .topbar-note { color: var(--muted); font-size: 13px; }
+    .topbar-note span { display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px rgba(97, 235, 196, .75); }
+
+    main { padding: 61px 0 72px; }
+    .intro { max-width: 680px; margin: 0 auto 40px; text-align: center; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px;
+      color: var(--green); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase;
+    }
+    .eyebrow-mark { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid rgba(97, 235, 196, .2); border-radius: 6px; background: var(--mint); }
+    h1 {
+      margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: clamp(38px, 5.1vw, 58px);
+      font-weight: 740; line-height: 1.04; letter-spacing: -.065em;
+    }
+    h1 em { color: var(--green); font-style: normal; font-weight: 740; text-shadow: 0 0 36px rgba(97, 235, 196, .16); }
+    .intro p { max-width: 500px; margin: 16px auto 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+    .workspace {
+      display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: 20px;
+      align-items: stretch;
+    }
+    .card { background: linear-gradient(145deg, rgba(15, 25, 35, .98), rgba(11, 19, 27, .98)); border: 1px solid rgba(123, 157, 177, .17); border-radius: 15px; box-shadow: var(--shadow); }
+    .upload-card { padding: 27px; }
+    .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .step-label { color: #8498a5; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+    h2 { margin: 7px 0 0; font-size: 18px; letter-spacing: -.035em; }
+    .file-kind { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.02); color: #a8b7c0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 650; }
+    .dropzone {
+      min-height: 231px; margin-top: 23px; padding: 22px 14px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;       border: 1px dashed #314550; border-radius: 11px; background: rgba(5, 12, 18, .48);
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .dropzone.is-over { border-color: var(--green); background: rgba(26, 81, 67, .18); transform: scale(1.01); box-shadow: inset 0 0 25px rgba(97, 235, 196, .05); }
+    .upload-icon { width: 49px; height: 49px; display: grid; place-items: center; border: 1px solid rgba(97, 235, 196, .18); border-radius: 12px; background: #101e27; color: var(--green); box-shadow: 0 0 22px rgba(97, 235, 196, .07); }
+    .dropzone strong { margin-top: 14px; font-size: 14px; font-weight: 680; }
+    .dropzone p { margin: 7px 0 13px; color: var(--muted); font-size: 12px; }
+    .choose-button { padding: 8px 12px; border: 1px solid #334752; border-radius: 7px; background: #111e27; color: var(--green); font-size: 11px; font-weight: 700; }
+    .choose-button:hover { background: var(--mint); border-color: #28634f; }
+    .file-info {
+      width: 100%; margin-top: 15px; padding: 11px 12px; display: none; align-items: center; gap: 10px;
+      border: 1px solid #293b46; border-radius: 9px; background: #101a23; text-align: left;
+    }
+    .file-info.visible { display: flex; }
+    .pdf-icon { width: 31px; height: 35px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 6px; background: var(--coral-pale); color: var(--coral); font-size: 9px; font-weight: 800; }
+    .file-copy { min-width: 0; flex: 1; }
+    .file-copy strong { display: block; overflow: hidden; margin: 0; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .file-copy small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .remove-file { width: 28px; height: 28px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 17px; }
+    .remove-file:hover { background: #1d2b35; color: var(--ink); }
+    .privacy-note { display: flex; align-items: flex-start; gap: 8px; margin: 15px 0 19px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .privacy-note svg { flex: 0 0 auto; margin-top: 1px; color: var(--green); }
+    .analyze-button {
+      width: 100%; min-height: 47px; display: flex; align-items: center; justify-content: center; gap: 9px;
+      border: 1px solid rgba(97, 235, 196, .34); border-radius: 8px; background: linear-gradient(100deg, #146b56, #13745b); color: #effff9; font-size: 12px; font-weight: 720;
+      box-shadow: 0 5px 20px rgba(22, 173, 128, .12);
+      transition: background .18s ease, transform .18s ease;
+    }
+    .analyze-button:hover:not(:disabled) { transform: translateY(-1px); background: linear-gradient(100deg, #188066, #16866a); }
+    .analyze-button:disabled { cursor: not-allowed; border-color: #2a3a42; background: #24332f; color: #91aaa0; box-shadow: none; }
+    .sample-button { width: 100%; margin-top: 13px; padding: 7px; border: 0; background: transparent; color: var(--green); font-size: 12px; font-weight: 700; }
+    .sample-button:hover { text-decoration: underline; }
+    .error-message { display: none; margin: 11px 0 0; color: #ac443b; font-size: 12px; line-height: 1.45; }
+    .error-message.visible { display: block; }
+
+    .results-card { overflow: hidden; padding: 25px 27px 23px; }
+    .results-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .preview-label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid rgba(97, 235, 196, .17); border-radius: 6px; background: rgba(16, 42, 37, .8); color: var(--green); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; font-weight: 700; letter-spacing: .06em; }
+    .preview-label .spark { color: var(--lime); }
+    .role-label { margin-top: 10px; color: var(--muted); font-size: 11px; }
+    .role-value { margin-top: 3px; font-size: 14px; font-weight: 700; }
+    .score-area { display: flex; align-items: center; gap: 19px; margin: 24px 0 21px; }
+    .score-ring {
+      width: 120px; height: 120px; flex: 0 0 auto; display: grid; place-items: center;
+      border-radius: 50%; background: conic-gradient(var(--green) calc(var(--score, 78) * 1%), #23323a 0);
+      position: relative; transition: background .8s ease;
+      filter: drop-shadow(0 0 15px rgba(97, 235, 196, .1));
+    }
+    .score-ring::before { position: absolute; inset: 7px; border: 1px solid #22343d; border-radius: 50%; background: #0d151e; content: ""; }
+    .score-number { z-index: 1; text-align: center; }
+    .score-number strong { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #eafbf5; font-size: 36px; font-weight: 600; letter-spacing: -.09em; line-height: 1; }
+    .score-number small { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .score-copy { flex: 1; }
+    .score-copy .status { color: var(--green); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; }
+    .score-copy h3 { margin: 6px 0 7px; font-size: 18px; letter-spacing: -.04em; }
+    .score-copy p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .score-copy b { color: var(--ink); font-weight: 700; }
+    .meter-list { display: grid; gap: 12px; margin: 0 0 21px; }
+    .meter-row { display: grid; grid-template-columns: 102px 1fr 28px; align-items: center; gap: 10px; color: #5f6b63; font-size: 10px; }
+    .meter-row strong { color: #47544c; font-size: 10px; text-align: right; }
+    .meter { height: 5px; overflow: hidden; border-radius: 9px; background: #25323a; }
+    .meter span { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg, #229b79, #75efd0); box-shadow: 0 0 10px rgba(97, 235, 196, .35); transition: width .8s ease; }
+    .skill-section { padding-top: 17px; border-top: 1px solid var(--line); }
+    .skill-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .skill-head h3 { margin: 0; font-size: 12px; letter-spacing: -.015em; }
+    .skill-head small { color: var(--muted); font-size: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 7px; font-size: 10px; font-weight: 650; }
+    .chip.present { border: 1px solid rgba(97, 235, 196, .12); background: var(--mint); color: #82dabb; }
+    .chip.missing { border: 1px solid rgba(255, 157, 130, .12); background: #2b1d1d; color: #f0a18a; }
+    .chip svg { width: 11px; height: 11px; }
+    .missing-section { margin-top: 15px; }
+    .results-footer { display: flex; gap: 8px; align-items: flex-start; margin-top: 17px; color: #909b93; font-size: 10px; line-height: 1.5; }
+    .results-footer svg { flex: 0 0 auto; margin-top: 1px; }
+    .analyzing { display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.45); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
+    .analyze-button.loading .analyzing { display: inline-block; }
+    .analyze-button.loading .button-icon { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .bottom-note { margin-top: 27px; color: #71818c; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; text-align: center; }
+
+    @media (max-width: 760px) {
+      main { padding-top: 45px; }
+      .workspace { grid-template-columns: 1fr; max-width: 540px; margin: 0 auto; }
+      .intro { margin-bottom: 30px; }
+      .upload-card, .results-card { padding: 23px; }
+    }
+    @media (max-width: 480px) {
+      .shell { width: min(100% - 30px, 420px); }
+      .topbar { height: 69px; }
+      .topbar-note { font-size: 11px; }
+      main { padding: 37px 0 48px; }
+      .intro p { font-size: 14px; }
+      .score-area { gap: 14px; }
+      .score-ring { width: 103px; height: 103px; }
+      .score-number strong { font-size: 34px; }
+      .meter-row { grid-template-columns: 90px 1fr 25px; gap: 7px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar shell">
+    <a class="brand" href="#" aria-label="0 to Shipped home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M5 17.5 10 12l3.4 3.2L20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.5 8H20v5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-name">0 to <span>Shipped</span></span>
+    </a>
+    <div class="topbar-note"><span aria-hidden="true"></span>Resume parser <span style="color:#c3cbc4">·</span> Demo</div>
+  </header>
+
+  <main class="shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">✳</span> A clearer next step</div>
+      <h1 id="page-title">A better resume.<br><em>A better shot.</em></h1>
+      <p>See how your resume lines up with a role, spot the skills you’re missing, and know what to improve next.</p>
+    </section>
+
+    <section class="workspace" aria-label="Resume score preview">
+      <article class="card upload-card">
+        <div class="card-heading">
+          <div>
+            <div class="step-label">01 / Your resume</div>
+            <h2>Start with your PDF</h2>
+          </div>
+          <span class="file-kind">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 1.5h5l3 3v9.9H4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 1.8v3h2.8M5.8 8h3.8M5.8 10.3h3.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            PDF only
+          </span>
+        </div>
+
+        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Choose a PDF resume or drop one here">
+          <span class="upload-icon" aria-hidden="true">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5v4A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <strong>Drop your resume here</strong>
+          <p>or choose a file from your device</p>
+          <button class="choose-button" id="chooseButton" type="button">Choose PDF</button>
+          <input class="sr-only" id="fileInput" type="file" accept="application/pdf,.pdf" aria-label="Choose a resume PDF">
+          <div class="file-info" id="fileInfo" aria-live="polite">
+            <span class="pdf-icon" aria-hidden="true">PDF</span>
+            <span class="file-copy"><strong id="fileName">resume.pdf</strong><small id="fileSize">Ready to preview</small></span>
+            <button class="remove-file" id="removeFile" type="button" aria-label="Remove selected PDF">×</button>
+          </div>
+        </div>
+
+        <p class="error-message" id="errorMessage" role="alert"></p>
+        <p class="privacy-note">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 13 3.4v3.8c0 3.1-2 5.8-5 7.3-3-1.5-5-4.2-5-7.3V3.4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="m5.8 7.8 1.5 1.5 3-3.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Your file stays in this browser. This demo doesn’t upload or store it.
+        </p>
+        <button class="analyze-button" id="analyzeButton" type="button" disabled>
+          <span class="analyzing" aria-hidden="true"></span>
+          <svg class="button-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 9.5 6l4.5 2-4.5 1.5L8 14l-1.5-4.5L2 8l4.5-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          <span id="analyzeLabel">Choose a PDF to continue</span>
+        </button>
+        <button class="sample-button" id="sampleButton" type="button">Explore with a sample resume instead</button>
+      </article>
+
+      <article class="card results-card" id="resultsCard" aria-labelledby="resultsTitle">
+        <div class="results-top">
+          <div>
+            <span class="preview-label"><span class="spark" aria-hidden="true">✳</span> SAMPLE RESULT</span>
+            <div class="role-label">Match preview for</div>
+            <div class="role-value">Product Designer</div>
+          </div>
+          <div style="text-align:right">
+            <div class="step-label">02 / Your match</div>
+            <div class="role-label" id="resultFileName">Example resume</div>
+          </div>
+        </div>
+
+        <div class="score-area">
+          <div class="score-ring" id="scoreRing" role="img" aria-label="Sample resume score: 78 out of 100">
+            <div class="score-number"><strong id="scoreNumber">78</strong><small>out of 100</small></div>
+          </div>
+          <div class="score-copy">
+            <div class="status">A solid starting point</div>
+            <h3 id="resultsTitle">You’re on the right track.</h3>
+            <p>Your resume already shows a good foundation. Add a few in-demand skills to make your experience stand out.</p>
+          </div>
+        </div>
+
+        <div class="meter-list" aria-label="Sample score breakdown">
+          <div class="meter-row"><span>Skills match</span><div class="meter"><span style="width:72%"></span></div><strong>72%</strong></div>
+          <div class="meter-row"><span>Impact &amp; results</span><div class="meter"><span style="width:84%"></span></div><strong>84%</strong></div>
+          <div class="meter-row"><span>Clarity</span><div class="meter"><span style="width:78%"></span></div><strong>78%</strong></div>
+        </div>
+
+        <section class="skill-section" aria-labelledby="presentHeading">
+          <div class="skill-head"><h3 id="presentHeading">Skills found</h3><small>6 detected</small></div>
+          <div class="chips">
+            <span class="chip present"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2.5 6.2 2.2 2.1 4.8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Figma</span>
+            <span class="chip present"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2.5 6.2 2.2 2.1 4.8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Prototyping</span>
+            <span class="chip present"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2.5 6.2 2.2 2.1 4.8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>User research</span>
+            <span class="chip present"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2.5 6.2 2.2 2.1 4.8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Wireframing</span>
+            <span class="chip present"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2.5 6.2 2.2 2.1 4.8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Design systems</span>
+            <span class="chip present"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2.5 6.2 2.2 2.1 4.8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Usability testing</span>
+          </div>
+        </section>
+
+        <section class="missing-section" aria-labelledby="missingHeading">
+          <div class="skill-head"><h3 id="missingHeading">Skills to highlight</h3><small>3 suggested</small></div>
+          <div class="chips">
+            <span class="chip missing">＋ Accessibility</span>
+            <span class="chip missing">＋ A/B testing</span>
+            <span class="chip missing">＋ Product analytics</span>
+          </div>
+        </section>
+
+        <div class="results-footer">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.2"/><path d="M8 7.2v3.4M8 4.8v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Sample insights only. Real parsing and scoring aren’t connected in this prototype.
+        </div>
+      </article>
+    </section>
+    <p class="bottom-note">Built to help you take the next step — one resume at a time.</p>
+  </main>
+
+  <script>
+    (() => {
+      const fileInput = document.getElementById("fileInput");
+      const dropzone = document.getElementById("dropzone");
+      const chooseButton = document.getElementById("chooseButton");
+      const fileInfo = document.getElementById("fileInfo");
+      const fileName = document.getElementById("fileName");
+      const fileSize = document.getElementById("fileSize");
+      const removeFile = document.getElementById("removeFile");
+      const analyzeButton = document.getElementById("analyzeButton");
+      const analyzeLabel = document.getElementById("analyzeLabel");
+      const sampleButton = document.getElementById("sampleButton");
+      const errorMessage = document.getElementById("errorMessage");
+      const resultFileName = document.getElementById("resultFileName");
+      const scoreRing = document.getElementById("scoreRing");
+      const scoreNumber = document.getElementById("scoreNumber");
+      const maxFileSize = 10 * 1024 * 1024;
+      let selectedFile = null;
+      let analysisTimer;
+
+      function setError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.toggle("visible", Boolean(message));
+      }
+
+      function formatSize(bytes) {
+        return bytes < 1024 * 1024
+          ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+          : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      function acceptFile(file) {
+        setError("");
+        if (!file) return;
+        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+          selectedFile = null;
+          fileInfo.classList.remove("visible");
+          analyzeButton.disabled = true;
+          analyzeLabel.textContent = "Choose a PDF to continue";
+          setError("That file doesn’t look like a PDF. Please choose a .pdf file.");
+          return;
+        }
+        if (file.size > maxFileSize) {
+          selectedFile = null;
+          fileInfo.classList.remove("visible");
+          analyzeButton.disabled = true;
+          analyzeLabel.textContent = "Choose a PDF to continue";
+          setError("This PDF is larger than 10 MB. Please choose a smaller file.");
+          return;
+        }
+        selectedFile = file;
+        fileName.textContent = file.name;
+        fileSize.textContent = `${formatSize(file.size)} · Ready to preview`;
+        fileInfo.classList.add("visible");
+        analyzeButton.disabled = false;
+        analyzeLabel.textContent = "Preview sample analysis";
+      }
+
+      function clearFile() {
+        selectedFile = null;
+        fileInput.value = "";
+        fileInfo.classList.remove("visible");
+        analyzeButton.disabled = true;
+        analyzeLabel.textContent = "Choose a PDF to continue";
+        setError("");
+      }
+
+      function runPreview(label) {
+        if (!selectedFile) return;
+        window.clearTimeout(analysisTimer);
+        analyzeButton.disabled = true;
+        analyzeButton.classList.add("loading");
+        analyzeLabel.textContent = "Preparing preview…";
+        setError("");
+        analysisTimer = window.setTimeout(() => {
+          resultFileName.textContent = label;
+          scoreRing.style.setProperty("--score", "78");
+          scoreRing.setAttribute("aria-label", "Sample resume score: 78 out of 100");
+          scoreNumber.textContent = "78";
+          analyzeButton.classList.remove("loading");
+          analyzeButton.disabled = false;
+          analyzeLabel.textContent = "Preview sample analysis";
+          document.getElementById("resultsCard").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 850);
+      }
+
+      chooseButton.addEventListener("click", () => fileInput.click());
+      dropzone.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        fileInput.click();
+      });
+      dropzone.addEventListener("keydown", (event) => {
+        if (event.target === dropzone && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          fileInput.click();
+        }
+      });
+      fileInput.addEventListener("change", () => acceptFile(fileInput.files[0]));
+      removeFile.addEventListener("click", clearFile);
+      analyzeButton.addEventListener("click", () => runPreview(selectedFile ? selectedFile.name : ""));
+      sampleButton.addEventListener("click", () => {
+        const sample = new File(["Sample resume preview"], "Jordan_Lee_Resume.pdf", { type: "application/pdf" });
+        acceptFile(sample);
+        runPreview("Jordan_Lee_Resume.pdf · sample");
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropzone.classList.add("is-over");
+        });
+      });
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropzone.classList.remove("is-over");
+        });
+      });
+      dropzone.addEventListener("drop", (event) => acceptFile(event.dataTransfer.files[0]));
+    })();
+  </script>
+</body>
+</html>
